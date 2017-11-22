@@ -155,7 +155,7 @@ t_vars = tf.trainable_variables() #收集可训练的变量
 d_vars = [var for var in t_vars if var.name.startswith('D')] #找出辨别器中的变量
 g_vars = [var for var in t_vars if var.name.startswith('G')] #找出生成器中的变量
 
-other_vars = [var for vat in tf.global_variables() if var not in t_vars] #找出应该被初始化的其他变量
+other_vars = [var for var in tf.global_variables() if var not in t_vars] #找出应该被初始化的其他变量
 
 generator_train = tf.train.AdamOptimizer(learning_rate_generator).minimize(generator_loss,var_list=g_vars)
 discriminator_train = tf.train.AdamOptimizer(learning_rate_discriminator).minimize(discriminator_loss,var_list=d_vars)
