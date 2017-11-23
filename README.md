@@ -13,6 +13,24 @@ Another type of GAN, using Deep Convolutional Generative Adversarial Nerworks.
  
  ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/250.jpg?raw=true)
  
+The results using fully connected network is:
+ 
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/254.png?raw=true)
+ 
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/255.png?raw=true)
+ 
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/255.png?raw=true)
+ 
+while using this DCGAN is :
+
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/251.png?raw=true)
+ 
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/252.png?raw=true)
+ 
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/253.png?raw=true)
+ 
+there is much difference, right?
+ 
 *********************
 
 ## How to use
