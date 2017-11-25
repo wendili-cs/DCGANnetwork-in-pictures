@@ -9,6 +9,11 @@ Another type of GAN, using Deep Convolutional Generative Adversarial Nerworks.
  
  - Another choice is that you can download the trained model by me. I will upload the model trained from Celeb's 10000 face pictures.
  
+ - In ``DCGAN_64x64.py``, used as the structure:
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/257.png?raw=true)
+ while in ``DCGAN_32x32.py``, I reduce one layer so the output is 32x32x3 pic.
+ 
+ 
  - Here is the hyperparameter:
  
  ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/250.jpg?raw=true)
