@@ -34,6 +34,14 @@ while using this DCGAN is :
  
  ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/253.png?raw=true)
  
+train the coins' dataset:
+
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/258.png?raw=true)
+ 
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/259.png?raw=true)
+ 
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/260.png?raw=true)
+ 
 there is much difference, right?
  
 *********************
