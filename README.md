@@ -35,7 +35,7 @@ The results using fully connected network is:
  
  ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/255.png?raw=true)
  
- ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/255.png?raw=true)
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/256.png?raw=true)
  
 while using this DCGAN is :
 
