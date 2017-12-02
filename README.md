@@ -18,6 +18,17 @@ Another type of GAN, using Deep Convolutional Generative Adversarial Nerworks.
  
  ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/250.jpg?raw=true)
  
+ 
+Then there I recorded the training process in 4 kind of training dataset:
+
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/261.gif?raw=true)
+ 
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/262.gif?raw=true)
+ 
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/263.gif?raw=true)
+ 
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/264.gif?raw=true)
+ 
 The results using fully connected network is:
  
  ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/254.png?raw=true)
@@ -34,16 +45,41 @@ while using this DCGAN is :
  
  ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/253.png?raw=true)
  
-train the coins' dataset:
+Here is the results in different training dataset:
 
- ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/258.png?raw=true)
+ - On drawing figure face:
+
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/265.png?raw=true)
  
- ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/259.png?raw=true)
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/266.png?raw=true)
  
- ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/260.png?raw=true)
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/267.png?raw=true)
+ 
+ - On car pictures:
+ 
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/268.png?raw=true)
+ 
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/269.png?raw=true)
+ 
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/270.png?raw=true)
+ 
+ - On human face pictures:
+ 
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/271.png?raw=true)
+ 
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/272.png?raw=true)
+ 
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/273.png?raw=true)
+ 
+ - On coins:
+ 
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/274.png?raw=true)
+ 
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/275.png?raw=true)
+ 
+ ![pic](https://github.com/AdamAlive/MarkdownRef/blob/master/276.png?raw=true)
  
 there is much difference, right?
- 
 *********************
 
 ## How to use
