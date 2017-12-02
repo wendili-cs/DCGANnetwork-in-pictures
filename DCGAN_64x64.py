@@ -5,6 +5,7 @@ tensorflow 1.3
 By LiWenDi
 """
 #使用DCGAN网络架构,卷积/逆卷积成64x64x3的图像
+#使用了学习率指数下降
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,12 +15,14 @@ import random
 import time
 
 toTrain = True #训练模式/输出模式
-toContinueTrain = True #训练模式下继续上次的训练
+toContinueTrain = False #训练模式下继续上次的训练
 toShuffle = True #是否打乱顺序
 toShow = False #训练途中是否展示当前成果
 howManyMake = 2 #每迭代多少次生成示例一次
-howManySave = 2 #每迭代多少次保存模型一次
+howManySave = 5 #每迭代多少次保存模型一次
 leaky_ReLU_alpha = 0.2 #leaky ReLU的负向保留值
+continueNum = 0 #从多少轮开始训练
+
 
 new_train = True #是否允许重复训练直至loss达到要求
 generator_first = True #优先满足生成器/辨别器的要求
@@ -28,20 +31,20 @@ discriminator_loss_demand = 1.0 #discriminator的loss要求
 max_re = 10 #最大允许重复训练次数
 require_num = 5 #从这个迭代次数之后再开始重复训练
 #生成图片
-do_times = 10
+do_times = 30
 generate_num = 10
 
 #展示图片
 show_batch_col = 4 #展示图片列数
 show_batch_row = 3 #展示图片行数
 
-output_path = "trained_model/"
+global_step = tf.Variable(continueNum, trainable=False)
+
+output_path = "trained_model_others/"
 sample_path = "samples_others/"
 temp_path = "temp_samples/"
-total_epoch = 150
-batch_size = 25 #决定生成品的特异性，越小越具有特异性
-learning_rate_generator = 0.00001
-learning_rate_discriminator = 0.00001
+total_epoch = 300
+batch_size = 28 #决定生成品的特异性，越小越具有特异性
 n_width = 64
 n_height = 64
 n_input = n_width*n_height*3
@@ -51,8 +54,10 @@ drop_prob = 0.75
 #Discriminator权重矩阵限制范围
 w_clip = 0.01
 
+sample_catch = True
+
 #--------------------读取数据-----------------------
-input_data = "coins"
+input_data = "traindataset"
 image_dirs = os.listdir(input_data)
 image_data = []
 np.random.shuffle(image_dirs)
@@ -66,11 +71,18 @@ dataset_num = len(image_data)
 image_data = np.array(image_data, float)
 image_data = image_data / 255.0
 
+#print(image_data.shape)
+#image_data = np.reshape(image_data, [len(image_data), n_height*n_width*3])
 #----------------------------------------------------
+decay_num = 75 * dataset_num // batch_size
+decay_rate = 0.99
+learning_rate_generator = tf.train.exponential_decay(0.0001, global_step, decay_num, decay_rate, staircase=True)
+learning_rate_discriminator = tf.train.exponential_decay(0.0001, global_step, decay_num, decay_rate, staircase=True)
 
 if not toTrain:
     toContinueTrain = True
 total_epoch = total_epoch*10 + 1
+decay_num = decay_num*10 + 1
 
 #-------------------------建立GAN网络----------------------------
 #Descriminator网络输入图片形状
@@ -162,20 +174,23 @@ t_vars = tf.trainable_variables() #收集可训练的变量
 d_vars = [var for var in t_vars if var.name.startswith('D')] #找出辨别器中的变量
 g_vars = [var for var in t_vars if var.name.startswith('G')] #找出生成器中的变量
 
-generator_train = tf.train.AdamOptimizer(learning_rate_generator).minimize(generator_loss,var_list=g_vars)
-discriminator_train = tf.train.AdamOptimizer(learning_rate_discriminator).minimize(discriminator_loss,var_list=d_vars)
+generator_train = tf.train.AdamOptimizer(learning_rate=learning_rate_generator).minimize(generator_loss,var_list=g_vars,global_step=global_step)
+discriminator_train = tf.train.AdamOptimizer(learning_rate=learning_rate_discriminator).minimize(discriminator_loss,var_list=d_vars,global_step=global_step)
 #截断clip
 clip_discriminator_var_op = [var.assign(tf.clip_by_value(var, -w_clip, w_clip)) for var in d_vars]
 
 other_vars = [var for var in tf.global_variables() if var not in t_vars] #找出应该被初始化的其他变量
 
-saver = tf.train.Saver(var_list=t_vars)
+#saver = tf.train.Saver(var_list=t_vars)
+saver = tf.train.Saver()
+
+noise_static = np.random.normal(size=(batch_size,n_noise))
 
 with tf.Session() as sess:
     if os.path.exists(output_path+"model.ckpt.meta"):
         if toContinueTrain:
             saver.restore(sess, output_path+"model.ckpt")
-            sess.run(tf.variables_initializer(other_vars))
+            #sess.run(tf.variables_initializer(other_vars))
         else:
             init = tf.global_variables_initializer()
             sess.run(init)
@@ -190,7 +205,13 @@ with tf.Session() as sess:
     #plt.ion()
     if toTrain:
         start_time = time.time()
-        for epoch in range(total_epoch):
+        for epoch in range(continueNum*10, total_epoch):
+            #if epoch % decay_num == decay_num - 1 and decay_num > 0:
+            #    learning_rate_generator = learning_rate_generator * decay_rate
+            #    learning_rate_discriminator = learning_rate_discriminator * decay_rate
+            #    #print("*学习率更新为：\n" + "*******生成器：" +str(sess.run(learning_rate_generator)) + "\n*******辨识器："+str(sess.run(learning_rate_discriminator)))
+            #    print("*学习率更新！")
+            #    print("----------------------------------------------------------------------------------")
             if epoch % 10 == 1:
                 start_time = time.time()
             if toShuffle:
@@ -240,6 +261,7 @@ with tf.Session() as sess:
                 if not os.path.exists(output_path):
                     os.makedirs(output_path)
                 saver.save(sess, output_path+"model.ckpt")
+                print("*学习率更新为：\n" + "*******生成器：" +str(sess.run(learning_rate_generator)) + "\n*******辨识器："+str(sess.run(learning_rate_discriminator)))
             #if epoch > 10*require_num:
                 #discriminator_loss_demand = 0.4
                 #generator_loss_demand = 0.8
@@ -251,8 +273,11 @@ with tf.Session() as sess:
                 new_batch = show_batch_row * show_batch_col
                 noise = np.random.normal(size=(new_batch,n_noise))
                 #生成图像
-                samples = sess.run(generator_output,feed_dict={z:noise})
-                fig,a = plt.subplots(show_batch_row,show_batch_col)
+                if not sample_catch:
+                    samples = sess.run(generator_output,feed_dict={z:noise})
+                else:
+                    samples = sess.run(generator_output,feed_dict={z:noise_static})
+                fig,a = plt.subplots(show_batch_row,show_batch_col,figsize=(4*show_batch_col,4*show_batch_row))
                 for i in range(show_batch_row):
                     for j in range(show_batch_col):
                         a[i][j].clear()
@@ -270,7 +295,7 @@ with tf.Session() as sess:
             noise = np.random.normal(size=(new_batch,n_noise))
             #生成图像
             samples = sess.run(generator_output,feed_dict={z:noise})
-            fig,a = plt.subplots(1,generate_num,figsize=(2*generate_num,2))
+            fig,a = plt.subplots(1,generate_num,figsize=(4*generate_num,4))
             for i in range(new_batch):
                 a[i].set_axis_off()
                 a[i].imshow(samples[i])
