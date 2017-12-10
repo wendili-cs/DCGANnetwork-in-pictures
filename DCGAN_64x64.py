@@ -265,7 +265,7 @@ with tf.Session() as sess:
                 else:
                     samples = sess.run(generator_output,feed_dict={z:noise_static})
                 fig,a = plt.subplots(show_batch_row,show_batch_col,figsize=(4*show_batch_col,4*show_batch_row))
-                #samples = np.clip(samples,0.0,1.0)
+                samples = np.clip(samples,0.0,1.0)
                 for i in range(show_batch_row):
                     for j in range(show_batch_col):
                         a[i][j].clear()
@@ -287,7 +287,7 @@ with tf.Session() as sess:
                 noise = np.random.normal(size=(new_batch,n_noise))
                 #生成图像
                 samples = sess.run(generator_output,feed_dict={z:noise})
-                #samples = np.clip(samples,1.0,0.0)
+                samples = np.clip(samples,1.0,0.0)
                 fig,a = plt.subplots(1,generate_num,figsize=(4*generate_num,4))
                 for i in range(new_batch):
                     a[i].set_axis_off()
