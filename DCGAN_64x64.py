@@ -183,7 +183,7 @@ other_vars = [var for var in tf.global_variables() if var not in t_vars] #找出
 
 #saver = tf.train.Saver(var_list=t_vars)
 saver = tf.train.Saver(max_to_keep=1)
-noise_static = np.random.normal(size=(batch_size,n_noise))
+noise_static = np.random.normal(size=(show_batch_row*show_batch_col,n_noise))
 
 with tf.Session() as sess:
     if toTrain:
