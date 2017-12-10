@@ -47,7 +47,7 @@ output_path = "trained_model_others/"
 sample_path = "samples_others/"
 temp_path = "temp_samples/"
 total_epoch = 400
-doRelax = False #是否中途休息
+doRelax = True #是否中途休息
 relax_epoch = 30 #每迭代多少次休息一次
 relax_time = 300 #每次休息的时长(s)
 batch_size = 25 #决定生成品的特异性，越小越具有特异性
@@ -186,22 +186,21 @@ saver = tf.train.Saver(max_to_keep=1)
 noise_static = np.random.normal(size=(batch_size,n_noise))
 
 with tf.Session() as sess:
-    if os.path.exists(output_path+"checkpoint"):
-        if toContinueTrain:
-            latest_checkpoint = tf.train.latest_checkpoint(output_path)
-            saver.restore(sess, latest_checkpoint)
+    if toTrain:
+        if os.path.exists(output_path+"checkpoint"):
+            if toContinueTrain:
+                latest_checkpoint = tf.train.latest_checkpoint(output_path)
+                saver.restore(sess, latest_checkpoint)
+            else:
+                init = tf.global_variables_initializer()
+                sess.run(init)
         else:
+            if toContinueTrain:
+                print("找不到存储的模型文件！")
             init = tf.global_variables_initializer()
             sess.run(init)
-    else:
-        if toContinueTrain:
-            print("找不到存储的模型文件！")
-        init = tf.global_variables_initializer()
-        sess.run(init)
-    total_batch = int(dataset_num/batch_size)
-    generator_c,discriminator_c = 0,0
-    
-    if toTrain:
+        total_batch = int(dataset_num/batch_size)
+        generator_c,discriminator_c = 0,0
         start_time = time.time()
         FirstSkip = True
         for epoch in range(sess.run(real_step), total_epoch):
