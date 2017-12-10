@@ -14,37 +14,43 @@ import cv2
 import random
 import time
 
-toTrain = True #训练模式/输出模式
-toContinueTrain = False #训练模式下继续上次的训练
+toTrain = True #训练模式
+toTest = False #输出模式
+toContinueTrain = True #训练模式下继续上次的训练
 toShuffle = True #是否打乱顺序
 toShow = False #训练途中是否展示当前成果
 howManyMake = 2 #每迭代多少次生成示例一次
-howManySave = 5 #每迭代多少次保存模型一次
+howManySave = 1 #每迭代多少次保存模型一次
 leaky_ReLU_alpha = 0.2 #leaky ReLU的负向保留值
-continueNum = 0 #从多少轮开始训练
+continueNum = 305 #从多少轮开始训练
 
 
 new_train = True #是否允许重复训练直至loss达到要求
 generator_first = True #优先满足生成器/辨别器的要求
 generator_loss_demand = 1.0 #generator的loss要求
 discriminator_loss_demand = 1.0 #discriminator的loss要求
-max_re = 10 #最大允许重复训练次数
+max_re = 1 #最大允许重复训练次数
 require_num = 5 #从这个迭代次数之后再开始重复训练
 #生成图片
-do_times = 30
+do_times = 10
 generate_num = 10
 
 #展示图片
 show_batch_col = 4 #展示图片列数
 show_batch_row = 3 #展示图片行数
 
-global_step = tf.Variable(continueNum, trainable=False)
-
+real_step = tf.Variable(continueNum*10 + 1, name="real_step", trainable=False) #用于存储读取的步数计数
+update_step = tf.assign_add(real_step, 1)
+decay_num = 1
+decay_rate = 0.99
 output_path = "trained_model_others/"
 sample_path = "samples_others/"
 temp_path = "temp_samples/"
-total_epoch = 300
-batch_size = 28 #决定生成品的特异性，越小越具有特异性
+total_epoch = 400
+doRelax = False #是否中途休息
+relax_epoch = 30 #每迭代多少次休息一次
+relax_time = 300 #每次休息的时长(s)
+batch_size = 25 #决定生成品的特异性，越小越具有特异性
 n_width = 64
 n_height = 64
 n_input = n_width*n_height*3
@@ -57,7 +63,7 @@ w_clip = 0.01
 sample_catch = True
 
 #--------------------读取数据-----------------------
-input_data = "traindataset"
+input_data = "(your dataset folder)"
 image_dirs = os.listdir(input_data)
 image_data = []
 np.random.shuffle(image_dirs)
@@ -70,19 +76,13 @@ for image_dir in image_dirs:
 dataset_num = len(image_data)
 image_data = np.array(image_data, float)
 image_data = image_data / 255.0
-
-#print(image_data.shape)
-#image_data = np.reshape(image_data, [len(image_data), n_height*n_width*3])
 #----------------------------------------------------
-decay_num = 75 * dataset_num // batch_size
-decay_rate = 0.99
-learning_rate_generator = tf.train.exponential_decay(0.0001, global_step, decay_num, decay_rate, staircase=True)
-learning_rate_discriminator = tf.train.exponential_decay(0.0001, global_step, decay_num, decay_rate, staircase=True)
 
-if not toTrain:
-    toContinueTrain = True
 total_epoch = total_epoch*10 + 1
-decay_num = decay_num*10 + 1
+decay_num = decay_num*10
+
+learning_rate_generator = tf.train.exponential_decay(0.0001, real_step, decay_num, decay_rate, staircase=True, name='learning_rate_generator')
+learning_rate_discriminator = tf.train.exponential_decay(0.0001, real_step, decay_num, decay_rate, staircase=True, name='learning_rate_discriminator')
 
 #-------------------------建立GAN网络----------------------------
 #Descriminator网络输入图片形状
@@ -174,23 +174,22 @@ t_vars = tf.trainable_variables() #收集可训练的变量
 d_vars = [var for var in t_vars if var.name.startswith('D')] #找出辨别器中的变量
 g_vars = [var for var in t_vars if var.name.startswith('G')] #找出生成器中的变量
 
-generator_train = tf.train.AdamOptimizer(learning_rate=learning_rate_generator).minimize(generator_loss,var_list=g_vars,global_step=global_step)
-discriminator_train = tf.train.AdamOptimizer(learning_rate=learning_rate_discriminator).minimize(discriminator_loss,var_list=d_vars,global_step=global_step)
+generator_train = tf.train.AdamOptimizer(learning_rate=learning_rate_generator).minimize(generator_loss,var_list=g_vars)
+discriminator_train = tf.train.AdamOptimizer(learning_rate=learning_rate_discriminator).minimize(discriminator_loss,var_list=d_vars)
 #截断clip
 clip_discriminator_var_op = [var.assign(tf.clip_by_value(var, -w_clip, w_clip)) for var in d_vars]
 
 other_vars = [var for var in tf.global_variables() if var not in t_vars] #找出应该被初始化的其他变量
 
 #saver = tf.train.Saver(var_list=t_vars)
-saver = tf.train.Saver()
-
+saver = tf.train.Saver(max_to_keep=1)
 noise_static = np.random.normal(size=(batch_size,n_noise))
 
 with tf.Session() as sess:
-    if os.path.exists(output_path+"model.ckpt.meta"):
+    if os.path.exists(output_path+"checkpoint"):
         if toContinueTrain:
-            saver.restore(sess, output_path+"model.ckpt")
-            #sess.run(tf.variables_initializer(other_vars))
+            latest_checkpoint = tf.train.latest_checkpoint(output_path)
+            saver.restore(sess, latest_checkpoint)
         else:
             init = tf.global_variables_initializer()
             sess.run(init)
@@ -201,17 +200,17 @@ with tf.Session() as sess:
         sess.run(init)
     total_batch = int(dataset_num/batch_size)
     generator_c,discriminator_c = 0,0
-    #开始交互模式
-    #plt.ion()
+    
     if toTrain:
         start_time = time.time()
-        for epoch in range(continueNum*10, total_epoch):
-            #if epoch % decay_num == decay_num - 1 and decay_num > 0:
-            #    learning_rate_generator = learning_rate_generator * decay_rate
-            #    learning_rate_discriminator = learning_rate_discriminator * decay_rate
-            #    #print("*学习率更新为：\n" + "*******生成器：" +str(sess.run(learning_rate_generator)) + "\n*******辨识器："+str(sess.run(learning_rate_discriminator)))
-            #    print("*学习率更新！")
-            #    print("----------------------------------------------------------------------------------")
+        FirstSkip = True
+        for epoch in range(sess.run(real_step), total_epoch):
+            sess.run(update_step)
+            if epoch % (relax_epoch*10) == 0 and doRelax and not FirstSkip:
+                print("休息中... ...")
+                time.sleep(relax_time)
+            elif epoch % (relax_epoch*10) == 0 and doRelax and FirstSkip:
+                FirstSkip = False
             if epoch % 10 == 1:
                 start_time = time.time()
             if toShuffle:
@@ -246,25 +245,14 @@ with tf.Session() as sess:
                             now_re = now_re + 1
             if epoch % 10 ==0:
                 end_time = time.time()
-                print('迭代次数: ',int(epoch/10 + 1),'--生成器_loss: %.4f' %generator_c,'--辨别器_loss: %.4f' %discriminator_c,'    耗时:{:.4f}(s)'.format((end_time-start_time)))
+                print('迭代次数: ',int(epoch/10),'--生成器_loss: %.4f' %generator_c,'--辨别器_loss: %.4f' %discriminator_c,'    耗时:{:.4f}(s)'.format((end_time-start_time)))
                 print("----------------------------------------------------------------------------------")
                 
-                '''
-                print("generator_output是：")
-                print(sess.run(generator_output,feed_dict={z:noise}))
-                print("discriminator_pred是：")
-                print(sess.run(discriminator_pred,feed_dict={z:noise}))
-                print("discriminator_real是：")
-                print(sess.run(discriminator_real,feed_dict={x:batch_x}))
-                '''
             if epoch % (10 * howManySave) == 0:
                 if not os.path.exists(output_path):
                     os.makedirs(output_path)
-                saver.save(sess, output_path+"model.ckpt")
+                saver.save(sess, output_path+"model.ckpt", global_step=epoch)
                 print("*学习率更新为：\n" + "*******生成器：" +str(sess.run(learning_rate_generator)) + "\n*******辨识器："+str(sess.run(learning_rate_discriminator)))
-            #if epoch > 10*require_num:
-                #discriminator_loss_demand = 0.4
-                #generator_loss_demand = 0.8
 
             #图片显示
             if epoch % (10*howManyMake) == 0:
@@ -278,6 +266,7 @@ with tf.Session() as sess:
                 else:
                     samples = sess.run(generator_output,feed_dict={z:noise_static})
                 fig,a = plt.subplots(show_batch_row,show_batch_col,figsize=(4*show_batch_col,4*show_batch_row))
+                #samples = np.clip(samples,0.0,1.0)
                 for i in range(show_batch_row):
                     for j in range(show_batch_col):
                         a[i][j].clear()
@@ -289,18 +278,26 @@ with tf.Session() as sess:
                     plt.show()
                 else:
                     plt.close(fig)
-    else:
-        for t in range(do_times):
-            new_batch = generate_num
-            noise = np.random.normal(size=(new_batch,n_noise))
-            #生成图像
-            samples = sess.run(generator_output,feed_dict={z:noise})
-            fig,a = plt.subplots(1,generate_num,figsize=(4*generate_num,4))
-            for i in range(new_batch):
-                a[i].set_axis_off()
-                a[i].imshow(samples[i])
-            if not os.path.exists(sample_path):
-                os.makedirs(sample_path)
-            plt.savefig(sample_path+'output_{0}.png'.format(t))
-            plt.close(fig)
-            print("生成了第{0}幅图片".format(t+1))
+
+    if toTest:
+        if os.path.exists(output_path+"checkpoint"):
+            latest_checkpoint = tf.train.latest_checkpoint(output_path)
+            saver.restore(sess, latest_checkpoint)
+            for t in range(do_times):
+                new_batch = generate_num
+                noise = np.random.normal(size=(new_batch,n_noise))
+                #生成图像
+                samples = sess.run(generator_output,feed_dict={z:noise})
+                #samples = np.clip(samples,1.0,0.0)
+                fig,a = plt.subplots(1,generate_num,figsize=(4*generate_num,4))
+                for i in range(new_batch):
+                    a[i].set_axis_off()
+                    a[i].imshow(samples[i])
+                if not os.path.exists(sample_path):
+                    os.makedirs(sample_path)
+                plt.savefig(sample_path+'output_{0}.png'.format(t))
+                plt.close(fig)
+                print("生成了第{0}幅图片".format(t+1))
+
+        else:
+            print("找不到存储的模型文件，无法生成图片！")
