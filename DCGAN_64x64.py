@@ -20,7 +20,7 @@ toContinueTrain = True #训练模式下继续上次的训练
 toShuffle = True #是否打乱顺序
 toShow = False #训练途中是否展示当前成果
 howManyMake = 2 #每迭代多少次生成示例一次
-howManySave = 1 #每迭代多少次保存模型一次
+howManySave = 5 #每迭代多少次保存模型一次
 leaky_ReLU_alpha = 0.2 #leaky ReLU的负向保留值
 continueNum = 0 #从多少轮开始训练
 
