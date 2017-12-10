@@ -22,7 +22,7 @@ toShow = False #训练途中是否展示当前成果
 howManyMake = 2 #每迭代多少次生成示例一次
 howManySave = 1 #每迭代多少次保存模型一次
 leaky_ReLU_alpha = 0.2 #leaky ReLU的负向保留值
-continueNum = 305 #从多少轮开始训练
+continueNum = 0 #从多少轮开始训练
 
 
 new_train = True #是否允许重复训练直至loss达到要求
