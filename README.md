@@ -88,3 +88,5 @@ there is much difference, right?
 
  - I will uploaded trained model to the folder `` 训练完成的模型 ``, whose name represent the dataset's type I trained. 
  Also, I will put the hyperparameter txt in it so that you should keep yours same to that and you can use it.
+
+__I strongly recommend to use 64x64 code for I have updated it in continuing training and learning rate decay, and the model I upload will be that code.__
