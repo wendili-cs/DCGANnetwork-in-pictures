@@ -42,11 +42,11 @@ show_batch_row = 3 #展示图片行数
 real_step = tf.Variable(continueNum*10 + 1, name="real_step", trainable=False) #用于存储读取的步数计数
 update_step = tf.assign_add(real_step, 1)
 decay_num = 1
-decay_rate = 0.99
+decay_rate = 0.95
 output_path = "trained_model_others/"
 sample_path = "samples_others/"
 temp_path = "temp_samples/"
-total_epoch = 400
+total_epoch = 150
 doRelax = True #是否中途休息
 relax_epoch = 30 #每迭代多少次休息一次
 relax_time = 300 #每次休息的时长(s)
